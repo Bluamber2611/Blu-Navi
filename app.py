@@ -2,12 +2,9 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from ta.trend import EMAIndicator
+from ta.trend import EMAIndicator, MACD
 from ta.momentum import RSIIndicator
-from ta.trend import MACD
 import plotly.graph_objects as go
-from datetime import datetime
-from scipy.stats import linregress
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -32,6 +29,10 @@ if st.sidebar.button("Refresh"):
 @st.cache_data(ttl=60)
 def fetch_data():
     data = yf.download(SYMBOL, period="5d", interval=INTERVAL, progress=False)
+    if data.empty:
+        st.error("No data from yfinance. Try again later.")
+        return pd.DataFrame()
+    
     close = data['Close'].squeeze()
     data['EMA_short'] = EMAIndicator(close, window=EMA_SHORT).ema_indicator()
     data['EMA_long'] = EMAIndicator(close, window=EMA_LONG).ema_indicator()
@@ -47,26 +48,24 @@ data = fetch_data()
 def get_signal(data):
     if len(data) < 2:
         return None
+
+    # Extract single values using .iloc
+    ema_short_now = data['EMA_short'].iloc[-1]
+    ema_long_now = data['EMA_long'].iloc[-1]
+    ema_short_prev = data['EMA_short'].iloc[-2]
+    ema_long_prev = data['EMA_long'].iloc[-2]
     
-    latest = data.iloc[-2]
-    current = data.iloc[-1]
+    rsi_now = data['RSI'].iloc[-1]
+    macd_now = data['MACD'].iloc[-1]
+    macd_signal_now = data['MACD_signal'].iloc[-1]
     
-    # Get the hour from the timestamp
-    hour = current.name.hour
+    # Get current hour
+    current_time = data.index[-1]
+    hour = current_time.hour
     if not (8 <= hour <= 17):
         return None
 
-    # === FIX: Use .item() to get SINGLE NUMBER ===
-    ema_short_now = current['EMA_short'].item()
-    ema_long_now = current['EMA_long'].item()
-    ema_short_prev = latest['EMA_short'].item()
-    ema_long_prev = latest['EMA_long'].item()
-    
-    rsi_now = current['RSI'].item()
-    macd_now = current['MACD'].item()
-    macd_signal_now = current['MACD_signal'].item()
-
-    # === Trend Logic ===
+    # === Signal Logic ===
     trend_up = (ema_short_now > ema_long_now) and (ema_short_prev <= ema_long_prev)
     rsi_ok = 30 < rsi_now < 70
     macd_bull = macd_now > macd_signal_now and macd_now > 0
@@ -74,20 +73,21 @@ def get_signal(data):
     score = (1 if trend_up else 0) + (0.5 if rsi_ok else 0) + (0.5 if macd_bull else 0)
 
     if score >= 2.0:
-        atr = (current['High'] - current['Low']) * 1.5
-        sl = current['Close'] - atr
-        tp = current['Close'] + (current['Close'] - sl) * 2.5
+        current_row = data.iloc[-1]
+        atr = (current_row['High'] - current_row['Low']) * 1.5
+        sl = current_row['Close'] - atr
+        tp = current_row['Close'] + (current_row['Close'] - sl) * 2.5
         return {
             'action': 'BUY',
-            'price': current['Close'],
+            'price': current_row['Close'],
             'sl': sl,
             'tp': tp,
             'confidence': score / 3,
-            'time': current.name
+            'time': current_time
         }
     return None
 
-signal = get_signal(data)
+signal = get_signal(data) if not data.empty else None
 
 # === CHART ===
 def plot_chart(data, signal, auto_draw):
@@ -98,10 +98,10 @@ def plot_chart(data, signal, auto_draw):
     fig.add_trace(go.Scatter(x=data.index, y=data['EMA_long'], line=dict(color='magenta'), name='EMA 21'))
 
     if signal and auto_draw:
-        color = 'lime' if signal['action'] == 'BUY' else 'red'
+        color = 'lime'
         fig.add_trace(go.Scatter(x=[signal['time']], y=[signal['price']],
                                  mode='markers', marker=dict(symbol='triangle-up', size=18, color=color),
-                                 name=signal['action']))
+                                 name='BUY'))
         fig.add_hline(y=signal['price'], line_color=color, annotation_text=f"Entry: ${signal['price']:.1f}")
         fig.add_hline(y=signal['sl'], line_dash='dash', line_color='red', annotation_text=f"SL: ${signal['sl']:.1f}")
         fig.add_hline(y=signal['tp'], line_dash='dash', line_color='lime', annotation_text=f"TP: ${signal['tp']:.1f}")
@@ -112,9 +112,12 @@ def plot_chart(data, signal, auto_draw):
     return fig
 
 # === LAYOUT ===
-col1, col2 = st.columns([3,1])
+col1, col2 = st.columns([3, 1])
 with col1:
-    st.plotly_chart(plot_chart(data, signal, auto_draw), use_container_width=True)
+    if not data.empty:
+        st.plotly_chart(plot_chart(data, signal, auto_draw), use_container_width=True)
+    else:
+        st.warning("Waiting for market data...")
 
 with col2:
     st.subheader("Trade")
