@@ -47,19 +47,32 @@ data = fetch_data()
 def get_signal(data):
     if len(data) < 2:
         return None
+    
     latest = data.iloc[-2]
     current = data.iloc[-1]
+    
+    # Get the hour from the timestamp
     hour = current.name.hour
     if not (8 <= hour <= 17):
         return None
+
+    # === FIX: Use .item() to get SINGLE NUMBER ===
+    ema_short_now = current['EMA_short'].item()
+    ema_long_now = current['EMA_long'].item()
+    ema_short_prev = latest['EMA_short'].item()
+    ema_long_prev = latest['EMA_long'].item()
     
-    trend_up = (current['EMA_short'].item() > current['EMA_long'].item()) and \
-               (latest['EMA_short'].item() <= latest['EMA_long'].item())
-    rsi_ok = 30 < current['RSI'].item() < 70
-    macd_bull = current['MACD'].item() > current['MACD_signal'].item() and current['MACD'].item() > 0
-    
+    rsi_now = current['RSI'].item()
+    macd_now = current['MACD'].item()
+    macd_signal_now = current['MACD_signal'].item()
+
+    # === Trend Logic ===
+    trend_up = (ema_short_now > ema_long_now) and (ema_short_prev <= ema_long_prev)
+    rsi_ok = 30 < rsi_now < 70
+    macd_bull = macd_now > macd_signal_now and macd_now > 0
+
     score = (1 if trend_up else 0) + (0.5 if rsi_ok else 0) + (0.5 if macd_bull else 0)
-    
+
     if score >= 2.0:
         atr = (current['High'] - current['Low']) * 1.5
         sl = current['Close'] - atr
@@ -69,7 +82,7 @@ def get_signal(data):
             'price': current['Close'],
             'sl': sl,
             'tp': tp,
-            'confidence': score/3,
+            'confidence': score / 3,
             'time': current.name
         }
     return None
