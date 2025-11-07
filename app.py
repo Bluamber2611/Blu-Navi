@@ -21,23 +21,41 @@ SIM_BALANCE = 10000
 # === SIDEBAR SETTINGS ===
 st.sidebar.header("Settings")
 
-# Custom CSS to force colors
+# Custom CSS for GREEN = ON, RED = OFF
 st.markdown("""
 <style>
-    div[data-testid="stSidebar"] div[data-testid="stVerticalBlock"]:nth-child(2) 
-    div[data-testid="stCheckbox"] label {
-        font-weight: bold;
+    /* Target checkboxes in sidebar */
+    div[data-testid="stSidebar"] div[data-testid="stCheckbox"] {
+        margin-bottom: 15px;
     }
-    /* Green when ON */
+    /* ON: Green background + white check */
     div[data-testid="stCheckbox"] input:checked + div {
         background-color: #00ff00 !important;
         border-color: #00ff00 !important;
+        color: white !important;
     }
-    /* Red when OFF */
+    div[data-testid="stCheckbox"] input:checked + div label {
+        color: white !important;
+    }
+    /* OFF: Red background + white text */
     div[data-testid="stCheckbox"] input:not(:checked) + div {
         background-color: #ff0000 !important;
         border-color: #ff0000 !important;
+        color: white !important;
     }
+    div[data-testid="stCheckbox"] input:not(:checked) + div label {
+        color: white !important;
+    }
+    
+</style>
+""", unsafe_allow_html=True)
+
+# Use checkbox (not toggle) for full control
+auto_draw = st.sidebar.checkbox("Auto-Draw Lines", value=True)
+paper_mode = st.sidebar.checkbox("Paper Mode", value=True)
+
+if st.sidebar.button("Refresh"):
+    st.cache_data.clear()
 </style>
 """, unsafe_allow_html=True)
 
