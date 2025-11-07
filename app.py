@@ -22,26 +22,29 @@ SIM_BALANCE = 10000
 st.sidebar.header("Settings")
 
 # Custom CSS for colored bubble
-st.markdown('''
-<style>
-    .toggle-bubble {
-        display: inline-block;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        margin-right: 10px;
-        vertical-align: middle;
-    }
-    .on-bubble { background-color: #00ff00; }
-    .off-bubble { background-color: #ff0000; }
-    .toggle-label {
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-</style>
-''', unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+        .toggle-bubble {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        .on-bubble { background-color: #00ff00; }
+        .off-bubble { background-color: #ff0000; }
+        .toggle-label {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # === Auto-Draw Toggle ===
 auto_draw = st.sidebar.checkbox("Auto-Draw Lines", value=True, key="auto_draw")
@@ -86,7 +89,6 @@ def get_signal(data):
     if len(data) < 2:
         return None
 
-    # Extract single values using .iloc
     ema_short_now = data['EMA_short'].iloc[-1]
     ema_long_now = data['EMA_long'].iloc[-1]
     ema_short_prev = data['EMA_short'].iloc[-2]
@@ -96,13 +98,11 @@ def get_signal(data):
     macd_now = data['MACD'].iloc[-1]
     macd_signal_now = data['MACD_signal'].iloc[-1]
     
-    # Get current hour
     current_time = data.index[-1]
     hour = current_time.hour
     if not (8 <= hour <= 17):
         return None
 
-    # Signal Logic
     trend_up = (ema_short_now > ema_long_now) and (ema_short_prev <= ema_long_prev)
     rsi_ok = 30 < rsi_now < 70
     macd_bull = macd_now > macd_signal_now and macd_now > 0
