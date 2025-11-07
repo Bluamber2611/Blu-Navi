@@ -20,18 +20,30 @@ SIM_BALANCE = 10000
 
 # === SIDEBAR SETTINGS ===
 st.sidebar.header("Settings")
-auto_draw = st.sidebar.toggle(
-    "Auto-Draw Lines",
-    value=True,
-    on_label="ON",
-    off_label="OFF"
-)
-paper_mode = st.sidebar.toggle(
-    "Paper Mode",
-    value=True,
-    on_label="ON",
-    off_label="OFF"
-)
+
+# Custom CSS to force colors
+st.markdown("""
+<style>
+    div[data-testid="stSidebar"] div[data-testid="stVerticalBlock"]:nth-child(2) 
+    div[data-testid="stCheckbox"] label {
+        font-weight: bold;
+    }
+    /* Green when ON */
+    div[data-testid="stCheckbox"] input:checked + div {
+        background-color: #00ff00 !important;
+        border-color: #00ff00 !important;
+    }
+    /* Red when OFF */
+    div[data-testid="stCheckbox"] input:not(:checked) + div {
+        background-color: #ff0000 !important;
+        border-color: #ff0000 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+auto_draw = st.sidebar.checkbox("Auto-Draw Lines", value=True)
+paper_mode = st.sidebar.checkbox("Paper Mode", value=True)
+
 if st.sidebar.button("Refresh"):
     st.cache_data.clear()
 
