@@ -32,9 +32,10 @@ if st.sidebar.button("Refresh"):
 @st.cache_data(ttl=60)
 def fetch_data():
     data = yf.download(SYMBOL, period="5d", interval=INTERVAL, progress=False)
-    data['EMA_short'] = EMAIndicator(data['Close'], window=EMA_SHORT).ema_indicator()
-    data['EMA_long'] = EMAIndicator(data['Close'], window=EMA_LONG).ema_indicator()
-    data['RSI'] = RSIIndicator(data['Close'], window=14).rsi()
+    close = data['Close'].squeeze()
+data['EMA_short'] = EMAIndicator(close, window=EMA_SHORT).ema_indicator()
+data['EMA_long'] = EMAIndicator(close, window=EMA_LONG).ema_indicator()
+data['RSI'] = RSIIndicator(close, window=14).rsi()
     macd = MACD(data['Close'])
     data['MACD'] = macd.macd()
     data['MACD_signal'] = macd.macd_signal()
