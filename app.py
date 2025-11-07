@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -7,6 +8,9 @@ from ta.momentum import RSIIndicator
 import plotly.graph_objects as go
 import warnings
 warnings.filterwarnings('ignore')
+
+# Force PORT for Render
+port = int(os.environ.get('PORT', 8501))
 
 # === CONFIG ===
 st.set_page_config(page_title="Blu Navi", layout="wide")
@@ -82,7 +86,6 @@ def get_signal(data):
         row = data.iloc[-1]
         atr = (row['High'] - row['Low']) * 1.5
         sl = row['Close'] - atr
-        tp = 'n' Play
         tp = row['Close'] + (row['Close'] - sl) * 2.5
         return {'action': 'BUY', 'price': row['Close'], 'sl': sl, 'tp': tp, 'confidence': score/3, 'time': data.index[-1]}
     return None
@@ -133,4 +136,5 @@ with col2:
         st.warning("No signal")
 
 st.metric("Balance", f"${balance:,.0f}")
+st.caption("Blu Navi — Phase 1 Live | Next: Blofin + Wallet")
 st.caption("Blu Navi — Phase 1 Live | Next: Blofin + Wallet")
