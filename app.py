@@ -54,6 +54,29 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-# === Paper Mode Toggle ===
+# === Paper Mode Toggle (FIXED: Added missing ) ) ===
 paper_mode = st.sidebar.checkbox("Paper Mode", value=True, key="paper_mode")
-bubble_class =
+bubble_class = "on-bubble" if paper_mode else "off-bubble"
+st.sidebar.markdown(
+    f'<div class="toggle-label"><span class="toggle-bubble {bubble_class}"></span>Paper Mode</div>',
+    unsafe_allow_html=True
+)
+
+if st.sidebar.button("Refresh"):
+    st.cache_data.clear()
+
+# === FETCH DATA ===
+@st.cache_data(ttl=60)
+def fetch_data():
+    data = yf.download(SYMBOL, period="5d", interval=INTERVAL, progress=False)
+    if data.empty:
+        st.error("No data from yfinance. Try again later.")
+        return pd.DataFrame()
+   
+    close = data['Close'].squeeze()
+    data['EMA_short'] = EMAIndicator(close, window=EMA_SHORT).ema_indicator()
+    data['EMA_long'] = EMAIndicator(close, window=EMA_LONG).ema_indicator()
+    data['RSI'] = RSIIndicator(close, window=14).rsi()
+    macd = MACD(close)
+    data['MACD'] = macd.macd()
+    data['MACD
