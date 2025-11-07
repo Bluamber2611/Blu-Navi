@@ -20,8 +20,18 @@ SIM_BALANCE = 10000
 
 # === SIDEBAR SETTINGS ===
 st.sidebar.header("Settings")
-auto_draw = st.sidebar.toggle("Auto-Draw Lines", value=True)
-paper_mode = st.sidebar.toggle("Paper Mode", value=True)
+auto_draw = st.sidebar.toggle(
+    "Auto-Draw Lines",
+    value=True,
+    on_label="ON",
+    off_label="OFF"
+)
+paper_mode = st.sidebar.toggle(
+    "Paper Mode",
+    value=True,
+    on_label="ON",
+    off_label="OFF"
+)
 if st.sidebar.button("Refresh"):
     st.cache_data.clear()
 
