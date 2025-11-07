@@ -54,7 +54,7 @@ st.sidebar.markdown(
     unsafe_allow_html=True
 )
 
-# === Paper Mode Toggle (FIXED: Added missing ) ) ===
+# === Paper Mode Toggle (FIXED: CORRECT PARENTHESES) ===
 paper_mode = st.sidebar.checkbox("Paper Mode", value=True, key="paper_mode")
 bubble_class = "on-bubble" if paper_mode else "off-bubble"
 st.sidebar.markdown(
@@ -79,4 +79,27 @@ def fetch_data():
     data['RSI'] = RSIIndicator(close, window=14).rsi()
     macd = MACD(close)
     data['MACD'] = macd.macd()
-    data['MACD
+    data['MACD_signal'] = macd.macd_signal()
+    return data
+
+data = fetch_data()
+
+# === GENERATE SIGNAL ===
+def get_signal(data):
+    if len(data) < 2:
+        return None
+    ema_short_now = data['EMA_short'].iloc[-1]
+    ema_long_now = data['EMA_long'].iloc[-1]
+    ema_short_prev = data['EMA_short'].iloc[-2]
+    ema_long_prev = data['EMA_long'].iloc[-2]
+   
+    rsi_now = data['RSI'].iloc[-1]
+    macd_now = data['MACD'].iloc[-1]
+    macd_signal_now = data['MACD_signal'].iloc[-1]
+   
+    current_time = data.index[-1]
+    hour = current_time.hour
+    if not (8 <= hour <= 17):
+        return None
+    trend_up = (ema_short_now > ema_long_now) and (ema_short_prev <= ema_long_prev)
+    rsi_ok = 30
