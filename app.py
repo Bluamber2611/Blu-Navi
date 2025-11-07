@@ -45,14 +45,19 @@ data = fetch_data()
 
 # === GENERATE SIGNAL ===
 def get_signal(data):
+    if len(data) < 2:
+        return None
     latest = data.iloc[-2]
     current = data.iloc[-1]
     hour = current.name.hour
-    if not (8 <= hour <= 17): return None
-
-    trend_up = (current['EMA_short'] > current['EMA_long']) and (latest['EMA_short'] <= latest['EMA_long'])
-    rsi_ok = 30 < current['RSI'] < 70
-    macd_bull = current['MACD'] > current['MACD_signal'] and current['MACD'] > 0
+    if not (8 <= hour <= 17):
+        return None
+    
+    trend_up = (current['EMA_short'].item() > current['EMA_long'].item()) and \
+               (latest['EMA_short'].item() <= latest['EMA_long'].item())
+    rsi_ok = 30 < current['RSI'].item() < 70
+    macd_bull = current['MACD'].item() > current['MACD_signal'].item() and current['MACD'].item() > 0
+    
     score = (1 if trend_up else 0) + (0.5 if rsi_ok else 0) + (0.5 if macd_bull else 0)
     
     if score >= 2.0:
@@ -60,8 +65,12 @@ def get_signal(data):
         sl = current['Close'] - atr
         tp = current['Close'] + (current['Close'] - sl) * 2.5
         return {
-            'action': 'BUY', 'price': current['Close'], 'sl': sl, 'tp': tp,
-            'confidence': score/3, 'time': current.name
+            'action': 'BUY',
+            'price': current['Close'],
+            'sl': sl,
+            'tp': tp,
+            'confidence': score/3,
+            'time': current.name
         }
     return None
 
